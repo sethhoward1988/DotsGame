@@ -2,3 +2,45 @@
 .game-container {
 	margin: 0 auto;
 }
+
+circle.dot {
+	fill: steelblue;
+}
+
+circle.dot.option-hover {
+	fill: green;
+}
+
+circle.dot.active {
+	fill: green;
+}
+
+circle.dot.option-legal {
+	fill: green;
+}
+
+circle.dot.option-illegal {
+	fill: red;
+}
+
+line {
+	stroke-width: 4px;
+	fill: orange;
+}
+
+line.active-line {
+
+}
+
+rect.square {
+	opacity:.7;
+}
+
+.color {
+	width: 30px;
+	height: 20px;
+}
+
+.player.active {
+	background-color: red;
+}

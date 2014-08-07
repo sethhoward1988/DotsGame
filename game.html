@@ -3,9 +3,19 @@
 		<script src="vendor/jquery.js"></script>
 		<script src="vendor/d3.min.js"></script>
 		<script src="vendor/underscore.js"></script>
+		<script src="js/Events.js"></script>
+		<script src="js/Game.js"></script>
+		<script src="js/GameSetup.js"></script>
+		<script src="js/Player.js"></script>
+		<script src="js/PlayerTurn.js"></script>
 		<link href="css/styles.css" rel="stylesheet" />
 	</head>
 	<body>
-		<script src="js/game.js"></script>
+		Grid Size: <input id="gridSize" type="number"></input><br />
+		Player Name<input id="playerInput" type="text"></input><br />
+		Player Color<input id="color" type="color">
+		<button id="add">Add Player</button>
+		<button id="start">Start Game</button>
+		<div id="game"></div>
 	</body>
 </html>
