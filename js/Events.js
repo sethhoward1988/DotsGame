@@ -2,9 +2,16 @@
 var Events = function () {
 	this.events = {};
 	this.idCounter = 0;
+	this.setup();
 }
 
 Events.prototype = {
+
+	setup: function () {
+		this.subscribe = _.bind(this.subscribe, this);
+		this.unsubscribe = _.bind(this.unsubscribe, this);
+		this.trigger = _.bind(this.trigger, this);
+	},
 
 	subscribe: function (fn, eventName) {
 		if(!this.events[eventName]){
@@ -25,14 +32,31 @@ Events.prototype = {
 	},
 
 	unsubscribe: function (eventName, id) {
-		// Still need to build this, but not needed right now
-		var functions = this.events[eventName];
+		var events = this.events[eventName]
+		if(events){
+			var functions = events.functions;
+			var index = -1;
+			functions.each(function(obj, currentIndex){
+				if(obj.id == id){
+					index = currentIndex;
+				}
+			});
+			if(index >= 0){
+				functions.splice(index, 1);
+			}
+		}
+
 	},
 
 	trigger: function (eventName) {
-		var functions = this.events[eventName].functions;
-		for(var i = 0; i < functions.length; i++){
-			functions[i].fn();
+		var args = Array.prototype.slice.call(arguments);
+		args.shift();
+		var events = this.events[eventName]
+		if(events){
+			var functions = events.functions;
+			for(var i = 0; i < functions.length; i++){
+				functions[i].fn.apply(window, args);
+			}
 		}
 	}
 }

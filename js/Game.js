@@ -1,20 +1,18 @@
 
-var Game = function (options) {
+var Game = function (options, events, dataModel, isResume) {
     for(option in options){
         this[option] = options[option];
     }
+    this.events = events;
+    this.dataModel = dataModel;
     this.setup();
     this.buildDataStructure();
     this.buildUI();
-    this.update();
+    this.createDots();
     this.activePlayer = this.playerTurn.activePlayer;
 }
 
 Game.prototype = {
-
-    players: 2,
-
-    gridSize: 4,
 
     size: 600,
 
@@ -31,7 +29,7 @@ Game.prototype = {
 
     squaresData: [],
 
-    consumedMoves: [],
+    consumedMoves: '',
 
     squareAnalysis: {},
 
@@ -131,8 +129,11 @@ Game.prototype = {
 
         if(score){
             this.activePlayer.incrementScore(score);
+            this.continuePlay = true;
+        } else {
+            this.continuePlay = false;
         }
-        
+
         this.updateSquares();
     },
 
@@ -208,7 +209,12 @@ Game.prototype = {
             .on('dragend', this.onDragEnd);
     },
 
-    update: function () {
+    updateAll: function () {
+        this.updateSquares();
+        this.updateLines();
+    },
+
+    createDots: function () {
         var that = this;
 
         // Data Join
@@ -261,7 +267,7 @@ Game.prototype = {
         var column = this.dActiveCircle.column;
         var row = this.dActiveCircle.row;
 
-        if(_.indexOf(this.consumedMoves, this.dActiveCircle.id + d.id) >= 0){
+        if(this.consumedMoves.indexOf(this.dActiveCircle.id + d.id) >= 0){
             return false;
         }
 
@@ -340,9 +346,8 @@ Game.prototype = {
     },
 
     onDrag: function () {
-        var event = d3.event.sourceEvent;
-        this.lineData.x[1] = event.x - this.gameOffset.left - this.padding.left;
-        this.lineData.y[1] = event.y - this.gameOffset.top - this.padding.top;
+        this.lineData.x[1] = this.lineData.x[1] + d3.event.dx;
+        this.lineData.y[1] = this.lineData.y[1] + d3.event.dy;
         this.lineSelection
             .attr('x1', function (d) { return d.x[0] })
             .attr('y1', function (d) { return d.y[0] })
@@ -361,14 +366,17 @@ Game.prototype = {
                 dFrom: _.clone(this.dActiveCircle),
                 dTo: _.clone(this.dLegalMove)
             });
-            this.consumedMoves.push(this.dActiveCircle.id + this.dLegalMove.id);
-            this.consumedMoves.push(this.dLegalMove.id + this.dActiveCircle.id);
+            this.consumedMoves += (this.dActiveCircle.id + this.dLegalMove.id);
+            this.consumedMoves += (this.dLegalMove.id + this.dActiveCircle.id);
             this.updateLines();
             this.updateSquareAnalysis(this.dActiveCircle, this.dLegalMove);
             this.analyzeBoard();
             this.dActiveCircle = null;
             this.dLegalMove = null;
-            this.endTurn();
+            if(!this.continuePlay){
+                this.endTurn();
+            }
+            this.sendMove();
         } else {
             // If it's not legitimate
             this.lineSelection.transition().duration(400)
@@ -383,12 +391,18 @@ Game.prototype = {
     endTurn: function () {
         this.playerTurn.next();
         this.activePlayer = this.playerTurn.activePlayer;
+        if(!this.activePlayer.isMe){
+            this.myTurn = false;
+        } else {
+            this.myTurn = true;
+        }
     },
 
     setBindings: function () {
         this.onDragStart = _.bind(this.onDragStart, this);
         this.onDrag = _.bind(this.onDrag, this);
         this.onDragEnd = _.bind(this.onDragEnd, this);
+        this.receiveMove = _.bind(this.receiveMove, this);
     },
 
     setWidthAndHeight: function () {
@@ -401,6 +415,7 @@ Game.prototype = {
         this.setWidthAndHeight();
         this.setScales();
         this.setDrag();
+        var dataChangeSubscription = this.events.subscribe(this.receiveMove, 'dataChange');
     },
 
     // Utility Methods
@@ -408,15 +423,34 @@ Game.prototype = {
         el = $(el);
         for(var i = 1; i < arguments.length; i++){
             el.attr('class', el.attr('class') + ' ' + arguments[i]);    
-        }
-        
+        }  
     },
 
     removeClass: function (el) {
         el = $(el);
         for(var i = 1; i < arguments.length; i++){
             el.attr('class', el.attr('class').replace(' ' + arguments[i],''));
-        }
-        
+        }   
+    },
+
+    sendMove: function () {
+        this.dataModel.setFields(
+            JSON.stringify(this.consumedMoves),
+            JSON.stringify(this.linesData),
+            JSON.stringify(this.squaresData),
+            JSON.stringify(this.squareAnalysis)
+        )
+    },
+
+    receiveMove: function (consumedMoves, linesData, squaresData, squareAnalysis) {
+        this.consumedMoves = JSON.parse(consumedMoves);
+        this.linesData = JSON.parse(squaresData);
+        this.squaresData = JSON.parse(squaresData);
+        this.squareAnalysis = JSON.parse(squareAnalysis);
+        this.updateAll();
+    },
+
+    destroy: function () {
+        this.events.unsubscribe('dataChange', dataChangeSubscription);
     }
 }

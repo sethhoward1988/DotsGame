@@ -1,11 +1,14 @@
 
-var PlayerTurn = function (el, events) {
+var PlayerTurn = function (el, events, dataModel) {
 	this.players = [];
+	this.activePlayerIndex = 0;
 	this.$el = el;
 	this.events = events;
 	this.bind();
 	this.events.subscribe(this.onScoreChange, 'scoreChange');
 	this.events.subscribe(this.onTurnChange, 'turnChange');
+	this.events.subscribe(this.onPlayersArrayChange, 'playersArrayChange');
+	this.events.subscribe(this.onChangeTurn, 'changeTurn');
 }
 
 PlayerTurn.prototype = {
@@ -16,8 +19,11 @@ PlayerTurn.prototype = {
 					'<div class="score"><%= score %></div>' +
 				'</div>'),
 
-	addPlayer: function (name, color) {
-		var player = new Player(name, color, this.events)
+	addPlayer: function (name, color, photoUrl, userId, sessionId, isMe) {
+		if(this.doesPlayerExist(userId)){
+			return;
+		}
+		var player = new Player(name, color, photoUrl, userId, isMe, this.events)
 		this.players.push(player);
 		this.$el.append(this.playerHtml({
 			name: player.getName(),
@@ -25,6 +31,15 @@ PlayerTurn.prototype = {
 			score: player.getScore(),
 			active: player.isActive ? 'active' : ''
 		}));
+	},
+
+	doesPlayerExist: function (userId) {
+		for(var i = 0; i < this.players.length; i++){
+			if(this.players[i].getUserId() == userId){
+				return true;
+			}
+		}
+		return false;
 	},
 
 	bind: function () {
@@ -39,10 +54,12 @@ PlayerTurn.prototype = {
 
 	startPlaying: function () {
 		this.players = _.shuffle(this.players);
-		this.activePlayerIndex = 0;
 		this.activePlayer = this.players[this.activePlayerIndex];
 		this.activePlayer.setIsActive(true);
-		this.events.trigger('turnChange');
+	},
+
+	resumePlay: function () {
+
 	},
 
 	next: function () {
@@ -54,7 +71,6 @@ PlayerTurn.prototype = {
 		this.activePlayer.setIsActive(false);
 		this.activePlayer = this.players[this.activePlayerIndex];
 		this.activePlayer.setIsActive(true);
-		this.events.trigger('turnChange');
 	},
 
 	isReady: function () {
@@ -81,8 +97,26 @@ PlayerTurn.prototype = {
 		this.updateUI();
 	},
 
+	onChangeTurn: function () {
+
+	},
+
+	onPlayersArrayChange: function (playersArray) {
+		this.players = JSON.parse(playersArray);
+	},
+
+	sendPlayersArray: function () {
+		this.dataModel.playersArrayField.setText(JSON.stringify(this.players));
+	},
+
 	onTurnChange: function () {
 		this.updateUI()
+	},
+
+	reset: function () {
+		for (var i = this.players.length - 1; i >= 0; i--) {
+			this.players[i].setScore(0);
+		};
 	}
 
 }
