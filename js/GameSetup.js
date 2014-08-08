@@ -27,7 +27,7 @@ var GameController = function () {
 	this.$el.append(this.$playersPanel).append(this.$gameContainer);
 	this.events = new Events();
 	this.realtimeDataModel = new RealtimeDataModel(this.events);
-	this.playerTurn = new PlayerTurn(this.$playersPanel, this.events, this.realtimeDataModel);
+	this.playerTurn = new PlayerTurn(this.$playersPanel, this.events, this.realtimeDataModel, this);
 	this.realtimeDataModel.startRealtime();
 	this.setup();
 }
@@ -38,8 +38,10 @@ GameController.prototype = {
 		this.onCollaboratorJoined = _.bind(this.onCollaboratorJoined, this);
 		this.onGameStarting = _.bind(this.onGameStarting, this);
 		this.onFileLoaded = _.bind(this.onFileLoaded, this);
+		this.onCollaboratorLeave = _.bind(this.onCollaboratorLeave, this);
 
 		this.events.subscribe(this.onCollaboratorJoined, 'collaboratorJoined');
+		this.events.subscribe(this.onCollaboratorLeave, 'collaboratorLeft');
 		this.events.subscribe(this.onGameStarting, 'startGame');
 		this.events.subscribe(this.onGameEnding, 'endGame');
 		this.events.subscribe(this.onFileLoaded, 'fileLoaded');
@@ -58,8 +60,11 @@ GameController.prototype = {
 
 	onFileLoaded: function () {
 		if(this.realtimeDataModel.configField.get('gameStarted') == 'true'){
+			this.gameStarted = true;
 			this.createGame(this.realtimeDataModel.configField.get('gridSize'), true);
 			this.realtimeDataModel.onDataChange();
+		} else {
+			this.gameStarted = false;
 		}
 
 		this.createPlayers();
@@ -78,6 +83,7 @@ GameController.prototype = {
 		this.events,
 		this.realtimeDataModel,
 		isResume);
+		this.gameStarted = true;
 	},
 
 	addPlayer: function (name, color, photoUrl, userId, sessionId, isMe) {
@@ -103,6 +109,10 @@ GameController.prototype = {
 			collaborator.userId,
 			collaborator.sessionId,
 			collaborator.isMe)
+	},
+
+	onCollaboratorLeave: function (collaborator) {
+		this.playerTurn.removePlayer(collaborator.userId);
 	}
 
 }

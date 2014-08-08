@@ -28,7 +28,6 @@ RealtimeDataModel.prototype = {
         this.onCollaboratorLeft = _.bind(this.onCollaboratorLeft, this);
         this.onDataChange = _.debounce(this.onDataChange, 250);
         this.onDataChange = _.bind(this.onDataChange, this);
-        this.onPlayersArrayChange = _.bind(this.onPlayersArrayChange, this);
         this.onConfigChange = _.bind(this.onConfigChange, this);
     },
 
@@ -48,7 +47,6 @@ RealtimeDataModel.prototype = {
         model.getRoot().set('linesData', linesData);
         model.getRoot().set('squareData', squaresData);
         model.getRoot().set('squareAnalysis', squareAnalysis);
-        model.getRoot().set('playersArray', playersArray);
         model.getRoot().set('config', config);
     },
 
@@ -59,14 +57,12 @@ RealtimeDataModel.prototype = {
         this.linesDataField = this.model.getRoot().get('linesData');
         this.squaresDataField = this.model.getRoot().get('squareData');
         this.squareAnalysisField = this.model.getRoot().get('squareAnalysis');
-        this.playersArrayField = this.model.getRoot().get('playersArray');
         this.configField = this.model.getRoot().get('config');
 
         this.consumedMovesField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
         this.linesDataField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
         this.squaresDataField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
         this.squareAnalysisField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
-        this.playersArrayField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onPlayersArrayChange);
 
         this.configField.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, this.onConfigChange);
 
@@ -85,14 +81,6 @@ RealtimeDataModel.prototype = {
         this.model.endCompoundOperation();
     },
 
-    setPlayersArray: function (playersArray){
-        this.playersArrayField.setText();
-    },
-
-    setActivePlayer: function (userId) {
-        this.configField.set('activePlayer', userId);
-    },
-
     startRealtime: function () {
         this.realtimeLoader = new rtclient.RealtimeLoader(this);
         this.realtimeLoader.start();
@@ -103,9 +91,9 @@ RealtimeDataModel.prototype = {
         this.events.trigger('collaboratorJoined', evt.collaborator);
     },
 
-    onCollaboratorLeft: function () {
+    onCollaboratorLeft: function (evt) {
         console.log('Collaborator left');
-        this.events.trigger('collaboratorLeft');
+        this.events.trigger('collaboratorLeft', evt.collaborator);
     },
 
     onDataChange: function () {
@@ -116,14 +104,6 @@ RealtimeDataModel.prototype = {
             this.linesDataField.getText(),
             this.squaresDataField.getText(),
             this.squareAnalysisField.getText()
-        );
-    },
-
-    onPlayersArrayChange: function () {
-        console.log('Players Array Change');
-        this.events.trigger(
-            'playersArrayChange',
-            JSON.parse(this.playersArrayField.getText())
         );
     },
 
@@ -145,11 +125,28 @@ RealtimeDataModel.prototype = {
             }
         } else if (evt.property == 'activePlayerIndex') {
             this.events.trigger(
-                'changeTurn',
+                'activePlayerIndexChange',
                 parseInt(evt.newValue)
             );
+        } else if (evt.property.indexOf('player-') == 0) {
+            this.events.trigger(
+                'playerUpdate',
+                JSON.parse(evt.newValue)
+            );
         }
-        console.log(evt);
+        console.log(evt.property, evt.oldValue, evt.newValue);
+    },
+
+    updatePlayerToDataModel: function (player) {
+        this.configField.set("player-" + player.userId, JSON.stringify(player));
+    },
+
+    removePlayerFromDataModel: function (player) {
+        this.configField.delete("player-" + player.userId);
+    },
+
+    setActivePlayerIndex: function (index) {
+        this.configField.set('activePlayerIndex', index);
     }
 
 }

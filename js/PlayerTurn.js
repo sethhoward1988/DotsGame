@@ -1,15 +1,14 @@
 
-var PlayerTurn = function (el, events, dataModel) {
+var PlayerTurn = function (el, events, dataModel, gameSetup) {
 	this.players = [];
 	this.activePlayerIndex = 0;
 	this.$el = el;
 	this.events = events;
 	this.dataModel = dataModel;
+	this.gameSetup = gameSetup;
 	this.bind();
-	this.events.subscribe(this.onScoreChange, 'scoreChange');
 	this.events.subscribe(this.onTurnChange, 'turnChange');
-	this.events.subscribe(this.onPlayersArrayChange, 'playersArrayChange');
-	this.events.subscribe(this.onChangeTurn, 'changeTurn');
+	this.events.subscribe(this.onActivePlayerIndexChange, 'activePlayerIndexChange');
 }
 
 PlayerTurn.prototype = {
@@ -20,14 +19,21 @@ PlayerTurn.prototype = {
 					'<div class="score"><%= score %></div>' +
 				'</div>'),
 
+	bind: function () {
+		this.onChangeTurn = _.bind(this.onChangeTurn, this);
+		this.updateUI = _.bind(this.updateUI, this);
+		this.onActivePlayerIndexChange = _.bind(this.onActivePlayerIndexChange, this);
+	},
+
 	addPlayer: function (name, color, photoUrl, userId, sessionId, isMe) {
 		if(this.doesPlayerExist(userId)){
 			return;
 		}
-		var player = new Player(name, color, photoUrl, userId, isMe, this.events)
+		var player = new Player(name, color, photoUrl, userId, sessionId, isMe, this.events)
 		if(isMe){
 			this.mePlayer = player;
 		}
+		this.dataModel.updatePlayerToDataModel(player);
 		this.players.push(player);
 		this.$el.append(this.playerHtml({
 			name: player.getName(),
@@ -35,6 +41,21 @@ PlayerTurn.prototype = {
 			score: player.getScore(),
 			active: player.isActive ? 'active' : ''
 		}));
+	},
+
+	removePlayer: function (userId) {
+		if(this.gameSetup.gameStarted){
+			return;
+		}
+		var removedPlayer;
+		for(var i = 0; i < this.players.length; i++){
+			if(this.players[i].userId == userId){
+				removedPlayer = this.players.splice(i, 1);
+				i = this.players.length;
+			}
+		}
+		this.dataModel.removePlayerFromDataModel(removedPlayer);
+		this.updateUI();
 	},
 
 	doesPlayerExist: function (userId) {
@@ -50,13 +71,6 @@ PlayerTurn.prototype = {
 		return this.mePlayer;
 	},
 
-	bind: function () {
-		this.onScoreChange = _.bind(this.onScoreChange, this);
-		this.onChangeTurn = _.bind(this.onChangeTurn, this);
-		this.onPlayersArrayChange = _.bind(this.onPlayersArrayChange, this);
-		this.updateUI = _.bind(this.updateUI, this);
-	},
-
 	clearPlayers: function () {
 		this.players = [];
 		this.activePlayer = null;
@@ -64,14 +78,15 @@ PlayerTurn.prototype = {
 
 	startPlaying: function () {
 		this.players = _.shuffle(this.players);
-		this.activePlayer = this.players[this.activePlayerIndex];
-		this.activePlayer.setIsActive(true);
-		this.sendPlayersArray();
-		this.sendCurrentPlayerIndex();
+		for(var i = 0; i < this.players.length; i++){
+			this.players[i].position = i;
+			this.dataModel.updatePlayerToDataModel(this.players[i]);
+		}
+		this.sendActivePlayerIndex(0);
 	},
 
-	resumePlay: function () {
-
+	sendActivePlayerIndex: function (index) {
+		this.dataModel.setActivePlayerIndex(index);
 	},
 
 	next: function () {
@@ -83,6 +98,7 @@ PlayerTurn.prototype = {
 		this.activePlayer.setIsActive(false);
 		this.activePlayer = this.players[this.activePlayerIndex];
 		this.activePlayer.setIsActive(true);
+		this.sendActivePlayerIndex(this.activePlayerIndex);
 	},
 
 	isReady: function () {
@@ -105,9 +121,11 @@ PlayerTurn.prototype = {
 		}
 	},
 
-	onScoreChange: function () {
-		this.updateUI();
-		this.sendPlayersArray();
+	onActivePlayerIndexChange: function (index) {
+		this.activePlayerIndex = index;
+		if(this.players[index].isMe){
+			this.events.trigger('myTurn');
+		}
 	},
 
 	onChangeTurn: function (index) {
@@ -116,19 +134,6 @@ PlayerTurn.prototype = {
 		this.activePlayer = this.players[index];
 		this.activePlayer.setIsActive(true);
 		this.updateUI();
-	},
-
-	onPlayersArrayChange: function (playersArray) {
-		this.players = playersArray;
-		this.updateUI();
-	},
-
-	sendCurrentPlayerIndex: function () {
-		this.dataModel.configField.set('activePlayerIndex', this.activePlayerIndex);
-	},
-
-	sendPlayersArray: function () {
-		this.dataModel.playersArrayField.setText(JSON.stringify(this.players));
 	},
 
 	reset: function () {

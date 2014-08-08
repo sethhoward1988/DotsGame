@@ -434,6 +434,7 @@ Game.prototype = {
         this.onDrag = _.bind(this.onDrag, this);
         this.onDragEnd = _.bind(this.onDragEnd, this);
         this.receiveMove = _.bind(this.receiveMove, this);
+        this.onMyTurn = _.bind(this.onMyTurn, this);
     },
 
     setWidthAndHeight: function () {
@@ -446,7 +447,12 @@ Game.prototype = {
         this.setWidthAndHeight();
         this.setScales();
         this.setDrag();
-        var dataChangeSubscription = this.events.subscribe(this.receiveMove, 'dataChange');
+        this.dataChangeSubscription = this.events.subscribe(this.receiveMove, 'dataChange');
+        this.turnChangeSubscription = this.events.subscribe(this.onMyTurn, 'myTurn');
+    },
+
+    onMyTurn: function () {
+        this.myTurn = true;
     },
 
     // Utility Methods
