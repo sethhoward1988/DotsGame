@@ -9,9 +9,14 @@ var Player = function (name, color, photoUrl, userId, sessionId, isMe, events) {
 	this.isActive = false;
 	this.score = 0;
 	this.events = events;
+	this.setup();
 }
 
 Player.prototype = {
+
+	setup: function () {
+		this.incrementScore = _.bind(this.incrementScore, this);
+	},
 
 	setIsActive: function (isActive) {
 		this.isActive = isActive;

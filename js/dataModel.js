@@ -38,7 +38,7 @@ RealtimeDataModel.prototype = {
         var linesData = model.createString('');
         var squaresData = model.createString('');
         var squareAnalysis = model.createString('');
-        var playersArray = model.createString('');
+        var playersMap = model.createMap({});
 
         var config = model.createMap({
             "gameStarted":"false"
@@ -66,7 +66,7 @@ RealtimeDataModel.prototype = {
         this.linesDataField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
         this.squaresDataField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
         this.squareAnalysisField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
-        this.playersArrayField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
+        this.playersArrayField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onPlayersArrayChange);
 
         this.configField.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, this.onConfigChange);
 
@@ -83,6 +83,10 @@ RealtimeDataModel.prototype = {
             this.squaresDataField.setText(squaresData);
             this.squareAnalysisField.setText(squareAnalysis);
         this.model.endCompoundOperation();
+    },
+
+    setPlayersArray: function (playersArray){
+        this.playersArrayField.setText();
     },
 
     setActivePlayer: function (userId) {
@@ -119,12 +123,12 @@ RealtimeDataModel.prototype = {
         console.log('Players Array Change');
         this.events.trigger(
             'playersArrayChange',
-            this.playersArrayField.getText()
+            JSON.parse(this.playersArrayField.getText())
         );
     },
 
     reset: function () {
-
+        this.initializeModel(this.model);
     },
 
     onConfigChange: function (evt) {

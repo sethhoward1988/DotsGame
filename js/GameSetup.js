@@ -26,8 +26,8 @@ var GameController = function () {
 	this.$gameContainer = $('<div class="dots-container"></div>');
 	this.$el.append(this.$playersPanel).append(this.$gameContainer);
 	this.events = new Events();
-	this.playerTurn = new PlayerTurn(this.$playersPanel, this.events);
 	this.realtimeDataModel = new RealtimeDataModel(this.events);
+	this.playerTurn = new PlayerTurn(this.$playersPanel, this.events, this.realtimeDataModel);
 	this.realtimeDataModel.startRealtime();
 	this.setup();
 }

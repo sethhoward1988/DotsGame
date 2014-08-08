@@ -234,6 +234,9 @@ Game.prototype = {
             })
             .attr('r', 0)
             .on('mouseover', function (d) {
+                if(!that.myTurn){
+                    return;
+                }
                 if(that.mouseDown){
                     if(that.isLegalMove(d)){
                         that.addClass(this, 'option-legal');    
@@ -246,6 +249,9 @@ Game.prototype = {
                 
             })
             .on('mouseout', function (d) {
+                if(!that.myTurn){
+                    return;
+                }
                 that.dLegalMove = null;
                 that.removeClass(this, 'option-hover', 'option-legal', 'option-illegal');
             })
@@ -311,6 +317,17 @@ Game.prototype = {
         var lines = this.gLines.selectAll('line')
             .data(this.linesData)
 
+        lines.enter().append('line')
+            .attr('x1', function (d) { 
+                return that.xScale(d.dFrom.column) 
+            })
+            .attr('y1', function (d) { return that.yScale(d.dFrom.row) })
+            .attr('x2', function (d) { return that.xScale(d.dTo.column) })
+            .attr('y2', function (d) { return that.yScale(d.dTo.row) })
+            .attr('stroke-width', 5)
+            .attr('stroke', function (d) { return d.color })
+            .style('opacity', 0)
+
         lines.transition().duration(200)
             .attr('x1', function (d) { 
                 return that.xScale(d.dFrom.column) 
@@ -318,34 +335,43 @@ Game.prototype = {
             .attr('y1', function (d) { return that.yScale(d.dFrom.row) })
             .attr('x2', function (d) { return that.xScale(d.dTo.column) })
             .attr('y2', function (d) { return that.yScale(d.dTo.row) })
+            .style('opacity', 1)
     },
 
     // EVENTS
 
     onDragStart: function (dCircle) {
+        var that = this;
+        if(!that.myTurn){
+            return;
+        }
         this.mouseDown = true;
         this.dActiveCircle = dCircle;
         this.$activeCircle = $(event.toElement);
         this.addClass(this.$activeCircle, 'active');
         var that = this;
         this.lineData = {
-            x: [this.xScale(dCircle.column), this.xScale(dCircle.column)],
+            x: [this.xScale(dCircle.column), this.dCircle(xScale.column)],
             y: [this.yScale(dCircle.row), this.yScale(dCircle.row)]
         }
 
         this.lineSelection = this.gDragLine.selectAll('line')
             .data([this.lineData])
 
-        this.lineSelection.enter().append('line')
+        .lineSelection.enter().append('line')
             .attr('x1', function (d) { return d.x[0] })
             .attr('y1', function (d) { return d.y[0] })
             .attr('x2', function (d) { return d.x[1] })
             .attr('y2', function (d) { return d.y[1] })
             .attr('stroke-width', 5)
-            .attr('stroke', this.activePlayer.getColor());
+            .attr('stroke', this.playerTurn.getMe().getColor());
     },
 
     onDrag: function () {
+        var that = this;
+        if(!that.myTurn){
+            return;
+        }
         this.lineData.x[1] = this.lineData.x[1] + d3.event.dx;
         this.lineData.y[1] = this.lineData.y[1] + d3.event.dy;
         this.lineSelection
@@ -356,6 +382,10 @@ Game.prototype = {
     },
 
     onDragEnd: function () {
+        var that = this;
+        if(!that.myTurn){
+            return;
+        }
         this.mouseDown = false;
         this.removeClass(this.$activeCircle, 'active');
         // Determine if it's a legitimate connection and push to permanent lines data, run update
@@ -363,6 +393,7 @@ Game.prototype = {
             var line = this.lineSelection[0][0];
             $(this.gLines[0][0]).append(line);
             this.linesData.push({
+                color: this.playerTurn.getMe().getColor(),
                 dFrom: _.clone(this.dActiveCircle),
                 dTo: _.clone(this.dLegalMove)
             });
@@ -444,7 +475,7 @@ Game.prototype = {
 
     receiveMove: function (consumedMoves, linesData, squaresData, squareAnalysis) {
         this.consumedMoves = JSON.parse(consumedMoves);
-        this.linesData = JSON.parse(squaresData);
+        this.linesData = JSON.parse(linesData);
         this.squaresData = JSON.parse(squaresData);
         this.squareAnalysis = JSON.parse(squareAnalysis);
         this.updateAll();

@@ -4,6 +4,7 @@ var PlayerTurn = function (el, events, dataModel) {
 	this.activePlayerIndex = 0;
 	this.$el = el;
 	this.events = events;
+	this.dataModel = dataModel;
 	this.bind();
 	this.events.subscribe(this.onScoreChange, 'scoreChange');
 	this.events.subscribe(this.onTurnChange, 'turnChange');
@@ -24,6 +25,9 @@ PlayerTurn.prototype = {
 			return;
 		}
 		var player = new Player(name, color, photoUrl, userId, isMe, this.events)
+		if(isMe){
+			this.mePlayer = player;
+		}
 		this.players.push(player);
 		this.$el.append(this.playerHtml({
 			name: player.getName(),
@@ -42,9 +46,15 @@ PlayerTurn.prototype = {
 		return false;
 	},
 
+	getMe: function () {
+		return this.mePlayer;
+	},
+
 	bind: function () {
 		this.onScoreChange = _.bind(this.onScoreChange, this);
-		this.onTurnChange = _.bind(this.onTurnChange, this);
+		this.onChangeTurn = _.bind(this.onChangeTurn, this);
+		this.onPlayersArrayChange = _.bind(this.onPlayersArrayChange, this);
+		this.updateUI = _.bind(this.updateUI, this);
 	},
 
 	clearPlayers: function () {
@@ -56,6 +66,8 @@ PlayerTurn.prototype = {
 		this.players = _.shuffle(this.players);
 		this.activePlayer = this.players[this.activePlayerIndex];
 		this.activePlayer.setIsActive(true);
+		this.sendPlayersArray();
+		this.sendCurrentPlayerIndex();
 	},
 
 	resumePlay: function () {
@@ -85,9 +97,9 @@ PlayerTurn.prototype = {
 		this.$el.empty();
 		for(var i = 0; i < this.players.length; i++){
 			this.$el.append(this.playerHtml({
-				name: this.players[i].getName(),
-				color: this.players[i].getColor(),
-				score: this.players[i].getScore(),
+				name: this.players[i].name,
+				color: this.players[i].color,
+				score: this.players[i].score,
 				active: this.players[i].isActive ? 'active' : ''
 			}));
 		}
@@ -95,22 +107,28 @@ PlayerTurn.prototype = {
 
 	onScoreChange: function () {
 		this.updateUI();
+		this.sendPlayersArray();
 	},
 
-	onChangeTurn: function () {
-
+	onChangeTurn: function (index) {
+		console.log('Turn should change...');
+		this.activePlayerIndex = index;
+		this.activePlayer = this.players[index];
+		this.activePlayer.setIsActive(true);
+		this.updateUI();
 	},
 
 	onPlayersArrayChange: function (playersArray) {
-		this.players = JSON.parse(playersArray);
+		this.players = playersArray;
+		this.updateUI();
+	},
+
+	sendCurrentPlayerIndex: function () {
+		this.dataModel.configField.set('activePlayerIndex', this.activePlayerIndex);
 	},
 
 	sendPlayersArray: function () {
 		this.dataModel.playersArrayField.setText(JSON.stringify(this.players));
-	},
-
-	onTurnChange: function () {
-		this.updateUI()
 	},
 
 	reset: function () {
@@ -118,5 +136,4 @@ PlayerTurn.prototype = {
 			this.players[i].setScore(0);
 		};
 	}
-
 }
