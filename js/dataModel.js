@@ -26,9 +26,10 @@ RealtimeDataModel.prototype = {
         this.startRealtime = _.bind(this.startRealtime, this);
         this.onCollaboratorJoined = _.bind(this.onCollaboratorJoined, this);
         this.onCollaboratorLeft = _.bind(this.onCollaboratorLeft, this);
-        this.onDataChange = _.debounce(this.onDataChange, 250);
-        this.onDataChange = _.bind(this.onDataChange, this);
-        this.onConfigChange = _.bind(this.onConfigChange, this);
+        this.onGameDataChange = _.debounce(this.onGameDataChange, 250);
+        this.onGameDataChange = _.bind(this.onGameDataChange, this);
+        this.onPlayersMapChange = _.bind(this.onPlayersMapChange, this);
+
     },
 
     initializeModel: function (model) {
@@ -87,24 +88,13 @@ RealtimeDataModel.prototype = {
         this.events.trigger('collaboratorLeft', evt.collaborator);
     },
 
-    onDataChange: function () {
-        console.log('Data Change');
-        this.events.trigger(
-            'dataChange',
-            this.consumedMovesField.getText(),
-            this.linesDataField.getText(),
-            this.squaresDataField.getText(),
-            this.squareAnalysisField.getText()
-        );
-    },
-
     reset: function () {
         this.initializeModel(this.model);
     },
 
     onGameDataChange: function (evt) {
         var event;
-        switch () {
+        switch (evt.property) {
             case 'gridSize':
                 break;
             case 'gameStarted':
@@ -115,24 +105,23 @@ RealtimeDataModel.prototype = {
         }
         if(event){
             this.events.trigger(
-                'startGame',
-                parseInt(this.gameDataField.get('gridSize'))
-            );
+                event,
+                evt.newValue);
         }
         console.log(evt.property, evt.oldValue, evt.newValue);
     },
 
-    onPlayersMapChange: function () {
+    onPlayersMapChange: function (evt) {
         if (evt.property == 'activePlayers') {
             this.events.trigger(
-                'playerUpdate',
-                parseInt(evt.newValue)
+                'playersUpdate',
+                evt.newValue
             );
         }
     },
 
     addPlayerToDataModel: function (player) {
-        var players = this.gameDataField.get('activePlayers');
+        var players = this.playersField.get('activePlayers');
         var doesPlayerExist = false;
         for (var i = players.length - 1; i >= 0; i--) {
             if(players[i].userId == player.userId){
@@ -140,22 +129,22 @@ RealtimeDataModel.prototype = {
             }
         };
         players.push(player);
-        this.gameDataField.set('activePlayers', players);
+        this.playersField.set('activePlayers', players);
     },
 
     updatePlayersToDataModel: function (players) {
-        this.gameDataField.set('activePlayers', players);
+        this.playersField.set('activePlayers', players);
     },
 
     removePlayerFromDataModel: function (userId) {
-        var players = this.gameDataField.get('activePlayers');
+        var players = this.playersField.get('activePlayers');
         var removedPlayer;
         for (var i = players.length - 1; i >= 0; i--) {
             if(players[i].userId == player.userId){
                 players.splice(i, 1);
             }
         };
-        this.gameDataField.set('activePlayers', players);
+        this.playersField.set('activePlayers', players);
     }
 
 }

@@ -9,8 +9,7 @@ var PlayerTurn = function (el, events, dataModel, gameSetup) {
 	this.bind();
 	this.events.subscribe(this.onCollaboratorJoined, 'collaboratorJoined');
 	this.events.subscribe(this.onCollaboratorLeave, 'collaboratorLeft');
-	this.events.subscribe(this.onPlayerUpdate, 'onPlayerUpdate');
-	this.events.subscribe(this.onTurnChange, 'onTurnChange');
+	this.events.subscribe(this.onPlayersUpdate, 'playersUpdate');
 }
 
 PlayerTurn.prototype = {
@@ -26,6 +25,7 @@ PlayerTurn.prototype = {
 		this.updateUI = _.bind(this.updateUI, this);
 		this.onCollaboratorLeave = _.bind(this.onCollaboratorLeave, this);
 		this.onCollaboratorJoined = _.bind(this.onCollaboratorJoined, this);
+		this.onPlayersUpdate = _.bind(this.onPlayersUpdate, this);
 	},
 
 	getMe: function () {
@@ -36,14 +36,17 @@ PlayerTurn.prototype = {
 		};
 	},
 
+	createPlayers: function () {
+		var players = window.gameController.realtimeDataModel.realtimeDoc.getCollaborators();
+		for (var i = players.length - 1; i >= 0; i--) {
+			this.onCollaboratorJoined(players[i]);
+		};
+	},
+
 	startPlaying: function () {
 		this.players = _.shuffle(this.players);
 		this.players[0].isMyTurn = true;
 		this.dataModel.updatePlayersToDataModel(this.players);
-	},
-
-	sendActivePlayerIndex: function (index) {
-		this.dataModel.setActivePlayerIndex(index);
 	},
 
 	next: function () {
@@ -80,7 +83,7 @@ PlayerTurn.prototype = {
 
 	onCollaboratorJoined: function (collaborator) {
 		this.dataModel.addPlayerToDataModel(new Player(
-			collaborator.name,
+			collaborator.displayName,
 			collaborator.color,
 			collaborator.photoUrl,
 			collaborator.userId,
@@ -110,13 +113,9 @@ PlayerTurn.prototype = {
 		}
 		this.players[index].isMyTurn = true;
 		this.dataModel.updatePlayersToDataModel(this.players);
-	}
-
-	onTurnChange: function () {
-		
 	},
 
-	onPlayerUpdate: function (players) {
+	onPlayersUpdate: function (players) {
 		this.players = players;
 		for(player in players){
 			if(players[player].isMe && players[player].isMyTurn){

@@ -5,14 +5,14 @@ $(function(){
 	$('body').append(window.gameController.$el);
 
 	$('#start').on('click', function () {
-		gameController.realtimeDataModel.configField.set('gridSize', $('#gridSize').val());
-		gameController.realtimeDataModel.configField.set('gameStarted', 'true');
+		gameController.realtimeDataModel.gameDataField.set('gridSize', $('#gridSize').val());
+		gameController.realtimeDataModel.gameDataField.set('gameStarted', 'true');
 		$('#start').attr('disabled', true);
 		$('#end').attr('disabled', false);
 	});
 
 	$('#end').on('click', function () {
-		gameController.realtimeDataModel.configField.set('gameStarted', 'false');
+		gameController.realtimeDataModel.gameDataField.set('gameStarted', 'false');
 		$('#start').attr('disabled', false);
 		$('#end').attr('disabled', true);
 	});
@@ -56,15 +56,14 @@ GameController.prototype = {
 	},
 
 	onFileLoaded: function () {
-		if(this.realtimeDataModel.configField.get('gameStarted') == 'true'){
+		if(this.realtimeDataModel.gameDataField.get('gameStarted') == 'true'){
 			this.gameStarted = true;
-			this.createGame(this.realtimeDataModel.configField.get('gridSize'), true);
+			this.createGame(this.realtimeDataModel.gameDataField.get('gridSize'), true);
 			this.realtimeDataModel.onDataChange();
 		} else {
 			this.gameStarted = false;
 		}
-
-		this.createPlayers();
+		this.playerTurn.createPlayers();
 	},
 
 	createGame: function (size, isResume) {
