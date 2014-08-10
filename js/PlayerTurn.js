@@ -1,7 +1,6 @@
 
 var PlayerTurn = function (el, events, dataModel, gameSetup) {
 	this.players = [];
-	this.activePlayerIndex = 0;
 	this.$el = el;
 	this.events = events;
 	this.dataModel = dataModel;
@@ -28,25 +27,11 @@ PlayerTurn.prototype = {
 		this.onPlayersUpdate = _.bind(this.onPlayersUpdate, this);
 	},
 
-	getMe: function () {
-		for (var i = this.players.length - 1; i >= 0; i--) {
-			if(this.players[i].isMe){
-				return this.players[i]
-			}
-		};
-	},
-
-	createPlayers: function () {
-		var players = window.gameController.realtimeDataModel.realtimeDoc.getCollaborators();
-		for (var i = players.length - 1; i >= 0; i--) {
-			this.onCollaboratorJoined(players[i]);
-		};
-	},
-
 	startPlaying: function () {
 		this.players = _.shuffle(this.players);
-		this.players[0].isMyTurn = true;
-		this.dataModel.updatePlayersToDataModel(this.players);
+		this.players[0].isActive = true;
+		this.activePlayerIndex = 0;
+		this.sendPlayerData();
 	},
 
 	next: function () {
@@ -55,18 +40,16 @@ PlayerTurn.prototype = {
 		} else {
 			this.activePlayerIndex++;
 		}
-		this.activePlayer.setIsActive(false);
-		this.activePlayer = this.players[this.activePlayerIndex];
-		this.activePlayer.setIsActive(true);
-		this.sendActivePlayerIndex(this.activePlayerIndex);
+		for (var i = this.players.length - 1; i >= 0; i--) {
+			if(this.players[i].isActive){
+				this.players[i].isActive = false;
+			}
+		};
+		this.sendPlayerData();
 	},
 
-	isReady: function () {
-		if(this.players.length < 2){
-			alert("You do not have enought players, add more!");
-			return false;
-		}
-		return true;
+	sendPlayerData: function () {
+		this.dataModel.setPlayerData(this.players, this.activePlayerIndex);
 	},
 
 	updateUI: function () {
@@ -88,7 +71,6 @@ PlayerTurn.prototype = {
 			collaborator.photoUrl,
 			collaborator.userId,
 			collaborator.sessionId,
-			collaborator.isMe,
 			this.events));
 	},
 
@@ -96,38 +78,46 @@ PlayerTurn.prototype = {
 		this.dataModel.removePlayerFromDataModel(collaborator.userId);
 	},
 
-	onChangeTurn: function () {
-		var index;
+	onPlayersUpdate: function () {
+		var playerData = this.dataModel.playersField.get('playerData');
+		this.players = playerData.activePlayers;
+		if(this.gameSetup.gameStarted){
+			this.activePlayerIndex = playerData.activePlayerIndex;
+			this.activePlayer = this.players[this.activePlayerIndex];
+			this.activePlayer.isActive = true;
+		}
 		for (var i = this.players.length - 1; i >= 0; i--) {
-			if(this.players[i].isMyTurn){
-				this.players[i].isMyTurn = false;
-				var a = function(activePlayerIndex){
-					index = activePlayerIndex;
-				}();
+			if(this.players[i].isActive){
+				if(this.isMe(this.players[i].userId)){
+					this.events.trigger('myTurn');	
+				}
 			}
-		}
-		if(index == this.players.length - 1){
-			index = 0;
-		} else {
-			index++;
-		}
-		this.players[index].isMyTurn = true;
-		this.dataModel.updatePlayersToDataModel(this.players);
-	},
-
-	onPlayersUpdate: function (players) {
-		this.players = players;
-		for(player in players){
-			if(players[player].isMe && players[player].isMyTurn){
-				this.events.trigger('myTurn');
-			}
-		}
+		};
 		this.updateUI();
 	},
 
-	reset: function () {
-		for (var i = this.players.length - 1; i >= 0; i--) {
-			this.players[i].setScore(0);
+	incrementScore: function (score) {
+		this.activePlayer.incrementScore(score);
+		this.sendPlayerData();
+	},
+
+	isMe: function (userId) {
+		var me = this.getMe();
+		return me.userId == userId;
+	},
+
+	getMe: function () {
+		var collaborators = this.dataModel.realtimeDoc.getCollaborators();
+		for (var i = collaborators.length - 1; i >= 0; i--) {
+			if(collaborators[i].isMe){
+				return collaborators[i];
+			}
 		};
+	},
+
+	reset: function () {
+		// for (var i = this.players.length - 1; i >= 0; i--) {
+		// 	this.players[i].setScore(0);
+		// };
 	}
 }

@@ -5,14 +5,13 @@ $(function(){
 	$('body').append(window.gameController.$el);
 
 	$('#start').on('click', function () {
-		gameController.realtimeDataModel.gameDataField.set('gridSize', $('#gridSize').val());
-		gameController.realtimeDataModel.gameDataField.set('gameStarted', 'true');
+		gameController.start();
 		$('#start').attr('disabled', true);
 		$('#end').attr('disabled', false);
 	});
 
 	$('#end').on('click', function () {
-		gameController.realtimeDataModel.gameDataField.set('gameStarted', 'false');
+		gameController.end();
 		$('#start').attr('disabled', false);
 		$('#end').attr('disabled', true);
 	});
@@ -44,32 +43,45 @@ GameController.prototype = {
 		this.events.subscribe(this.onFileLoaded, 'fileLoaded');
 	},
 
-	onGameStarting: function (size) {
-		this.createGame(size);
+	start: function () {
+		this.realtimeDataModel.gameDataField.set('gridSize', $('#gridSize').val());
+		this.realtimeDataModel.gameDataField.set('gameStarted', 'true');
+		this.createGame(false);
+		this.playerTurn.startPlaying();
+	},
+
+	end: function () {
+		this.realtimeDataModel.gameDataField.set('gameStarted', 'false');
+	},
+
+	onGameStarting: function (newValue, oldValue) {
+		var isResume = false;
+		if(oldValue == 'true' && newValue == 'true'){
+			isResume = true;
+		}
+		if(!this.game){
+			this.createGame(isResume);	
+		}
 	},
 
 	onGameEnding: function () {
-		this.game.destroy();
+		// this.game.destroy();
 		this.playerTurn.reset();
 		this.realtimeDataModel.reset();
-		this.game.$el.remove();
+		this.game.el.remove();
 	},
 
 	onFileLoaded: function () {
 		if(this.realtimeDataModel.gameDataField.get('gameStarted') == 'true'){
 			this.gameStarted = true;
 			this.createGame(this.realtimeDataModel.gameDataField.get('gridSize'), true);
-			this.realtimeDataModel.onDataChange();
 		} else {
 			this.gameStarted = false;
 		}
-		this.playerTurn.createPlayers();
 	},
 
-	createGame: function (size, isResume) {
-		if(!this.playerTurn.isReady){ return; }
-
-		this.playerTurn.startPlaying();
+	createGame: function (isResume) {
+		var size = parseInt(this.realtimeDataModel.gameDataField.get('gridSize'));
 
 		this.game = new Game({
 			gridSize: size ? size : 4,

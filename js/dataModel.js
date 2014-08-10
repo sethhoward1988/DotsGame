@@ -35,14 +35,16 @@ RealtimeDataModel.prototype = {
     initializeModel: function (model) {
         this.model = model;
         var collaborativePlayersMap = model.createMap({
-            activePlayerIndex: 0,
-            activePlayers: []
+            playerData: {
+                activePlayerIndex: 0,
+                activePlayers: []
+            }
         });
         var collaborativeGameDataMap = model.createMap({
             gridSize: 4,
-            consumedMoves: {},
-            linesData: {},
-            squaresData: {},
+            consumedMoves: '',
+            linesData: [],
+            squaresData: [],
             squaresAnalysis: {},
             gameStarted: false,
         });
@@ -63,21 +65,40 @@ RealtimeDataModel.prototype = {
         this.realtimeDoc.addEventListener(gapi.drive.realtime.EventType.COLLABORATOR_JOINED, this.onCollaboratorJoined);
         this.realtimeDoc.addEventListener(gapi.drive.realtime.EventType.COLLABORATOR_LEFT, this.onCollaboratorLeft);
 
+        this.createPlayers();
         this.events.trigger('fileLoaded');
     },
 
-    setFields: function (consumedMoves, linesData, squaresData, squareAnalysis) {
-        this.model.beginCompoundOperation();
-            this.consumedMovesField.setText(consumedMoves);
-            this.linesDataField.setText(linesData);
-            this.squaresDataField.setText(squaresData);
-            this.squareAnalysisField.setText(squareAnalysis);
-        this.model.endCompoundOperation();
+    setGameData: function (consumedMoves, linesData, squaresData, squaresAnalysis) {
+        this.model.beginCompoundOperation('move');
+            this.gameDataField.set('consumedMoves', consumedMoves);
+            this.gameDataField.set('linesData', linesData);
+            this.gameDataField.set('squaresData', squaresData);
+            this.gameDataField.set('squaresAnalysis', squaresAnalysis);
+        this.model.endCompoundOperation('move');
     },
 
     startRealtime: function () {
         this.realtimeLoader = new rtclient.RealtimeLoader(this);
         this.realtimeLoader.start();
+    },
+
+    createPlayers: function () {
+        var collaborators = this.realtimeDoc.getCollaborators();
+        var players = [];
+        
+        for (var i = collaborators.length - 1; i >= 0; i--) {
+            players.push(new Player(
+                collaborators[i].displayName,
+                collaborators[i].color,
+                collaborators[i].photoUrl,
+                collaborators[i].userId,
+                collaborators[i].sessionId,
+                collaborators[i].isMe
+                ));
+        };
+
+        this.playersField.set('activePlayers', players);
     },
 
     onCollaboratorJoined: function (evt) {
@@ -93,35 +114,40 @@ RealtimeDataModel.prototype = {
     },
 
     onGameDataChange: function (evt) {
+        if(evt.compoundOperationNames[0] = 'move'){
+            this.events.trigger(
+                'receiveMove',
+                this.gameDataField.get('consumedMoves'),
+                this.gameDataField.get('linesData'),
+                this.gameDataField.get('squaresData'),
+                this.gameDataField.get('squaresAnalysis'))
+        }
         var event;
         switch (evt.property) {
             case 'gridSize':
                 break;
             case 'gameStarted':
-                event = 'startGame';
+                if(evt.newValue == 'true'){
+                    event = 'startGame';
+                } else {
+                    event = 'endGame'    
+                }
                 break;
-            case 'endGame':
-                event = 'endGame'
         }
-        if(event){
-            this.events.trigger(
-                event,
-                evt.newValue);
-        }
+        this.events.trigger(
+            event ? event : evt.property,
+            evt.newValue,
+            evt.oldValue);
         console.log(evt.property, evt.oldValue, evt.newValue);
     },
 
     onPlayersMapChange: function (evt) {
-        if (evt.property == 'activePlayers') {
-            this.events.trigger(
-                'playersUpdate',
-                evt.newValue
-            );
-        }
+        this.events.trigger('playersUpdate');
     },
 
     addPlayerToDataModel: function (player) {
-        var players = this.playersField.get('activePlayers');
+        var playerData = this.playersField.get('playerData');
+        var players = playerData.activePlayers;
         var doesPlayerExist = false;
         for (var i = players.length - 1; i >= 0; i--) {
             if(players[i].userId == player.userId){
@@ -129,22 +155,26 @@ RealtimeDataModel.prototype = {
             }
         };
         players.push(player);
-        this.playersField.set('activePlayers', players);
+        this.setPlayerData(players, playerData.activePlayerIndex);
     },
 
-    updatePlayersToDataModel: function (players) {
-        this.playersField.set('activePlayers', players);
+    setPlayerData: function (players, activePlayerIndex) {
+        this.playersField.set('playerData', {
+            activePlayers: players,
+            activePlayerIndex: activePlayerIndex
+        });  
     },
 
     removePlayerFromDataModel: function (userId) {
-        var players = this.playersField.get('activePlayers');
+        var playerData = this.playersField.get('playerData');
+        var players = playerData.activePlayers;
         var removedPlayer;
         for (var i = players.length - 1; i >= 0; i--) {
-            if(players[i].userId == player.userId){
+            if(players[i].userId == userId){
                 players.splice(i, 1);
             }
         };
-        this.playersField.set('activePlayers', players);
+        this.setPlayerData(players, playerData.activePlayerIndex);
     }
 
 }

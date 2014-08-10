@@ -9,7 +9,6 @@ var Game = function (options, events, dataModel, isResume) {
     this.buildDataStructure();
     this.buildUI();
     this.createDots();
-    this.activePlayer = this.playerTurn.activePlayer;
 }
 
 Game.prototype = {
@@ -31,7 +30,7 @@ Game.prototype = {
 
     consumedMoves: '',
 
-    squareAnalysis: {},
+    squaresAnalysis: {},
 
     el: null,
 
@@ -58,7 +57,7 @@ Game.prototype = {
             var that = this;
 
             var a = function (num) {
-                that.squareAnalysis['square' + num] = 0;    
+                that.squaresAnalysis['square' + num] = 0;    
             }(i)
         }
     },
@@ -73,11 +72,7 @@ Game.prototype = {
         return data;
     },
 
-    analyzeBoard: function () {
-
-    },
-
-    updateSquareAnalysis: function (dFrom, dTo) {
+    updateSquaresAnalysis: function (dFrom, dTo) {
         var affectedSquares = [];
         var that = this;
         var score = 0;
@@ -118,8 +113,8 @@ Game.prototype = {
         }
 
         for(var i = 0; i < affectedSquares.length; i++){
-            this.squareAnalysis['square' + affectedSquares[i]]++;
-            if(this.squareAnalysis['square' + affectedSquares[i]] == 4){
+            this.squaresAnalysis['square' + affectedSquares[i]]++;
+            if(this.squaresAnalysis['square' + affectedSquares[i]] == 4){
                 var b = function (squareNumber) {
                     that.squaresData.push(squareNumber);
                     score++;
@@ -128,12 +123,11 @@ Game.prototype = {
         }
 
         if(score){
-            this.activePlayer.incrementScore(score);
+            this.playerTurn.incrementScore(score);
             this.continuePlay = true;
         } else {
             this.continuePlay = false;
         }
-
         this.updateSquares();
     },
 
@@ -158,7 +152,7 @@ Game.prototype = {
             .attr('height', function (d) {
                 return that.xScale(1) - that.xScale(0);  
             })
-            .attr('fill', this.activePlayer.getColor());
+            .attr('fill', this.playerTurn.activePlayer);
     },
 
     buildUI: function () {
@@ -351,20 +345,20 @@ Game.prototype = {
         this.addClass(this.$activeCircle, 'active');
         var that = this;
         this.lineData = {
-            x: [this.xScale(dCircle.column), this.dCircle(xScale.column)],
+            x: [this.xScale(dCircle.column), this.xScale(dCircle.column)],
             y: [this.yScale(dCircle.row), this.yScale(dCircle.row)]
         }
 
         this.lineSelection = this.gDragLine.selectAll('line')
             .data([this.lineData])
 
-        .lineSelection.enter().append('line')
+        this.lineSelection.enter().append('line')
             .attr('x1', function (d) { return d.x[0] })
             .attr('y1', function (d) { return d.y[0] })
             .attr('x2', function (d) { return d.x[1] })
             .attr('y2', function (d) { return d.y[1] })
             .attr('stroke-width', 5)
-            .attr('stroke', this.playerTurn.getMe().getColor());
+            .attr('stroke', this.playerTurn.getMe().color);
     },
 
     onDrag: function () {
@@ -393,15 +387,14 @@ Game.prototype = {
             var line = this.lineSelection[0][0];
             $(this.gLines[0][0]).append(line);
             this.linesData.push({
-                color: this.playerTurn.getMe().getColor(),
+                color: this.playerTurn.getMe().color,
                 dFrom: _.clone(this.dActiveCircle),
                 dTo: _.clone(this.dLegalMove)
             });
             this.consumedMoves += (this.dActiveCircle.id + this.dLegalMove.id);
             this.consumedMoves += (this.dLegalMove.id + this.dActiveCircle.id);
             this.updateLines();
-            this.updateSquareAnalysis(this.dActiveCircle, this.dLegalMove);
-            this.analyzeBoard();
+            this.updateSquaresAnalysis(this.dActiveCircle, this.dLegalMove);
             this.dActiveCircle = null;
             this.dLegalMove = null;
             if(!this.continuePlay){
@@ -421,11 +414,8 @@ Game.prototype = {
 
     endTurn: function () {
         this.playerTurn.next();
-        this.activePlayer = this.playerTurn.activePlayer;
-        if(!this.activePlayer.isMe){
+        if(this.myTurn){
             this.myTurn = false;
-        } else {
-            this.myTurn = true;
         }
     },
 
@@ -447,8 +437,8 @@ Game.prototype = {
         this.setWidthAndHeight();
         this.setScales();
         this.setDrag();
-        this.dataChangeSubscription = this.events.subscribe(this.receiveMove, 'dataChange');
         this.turnChangeSubscription = this.events.subscribe(this.onMyTurn, 'myTurn');
+        this.receiveMovedSubscription = this.events.subscribe(this.receiveMove, 'receiveMove');
     },
 
     onMyTurn: function () {
@@ -471,19 +461,18 @@ Game.prototype = {
     },
 
     sendMove: function () {
-        this.dataModel.setFields(
-            JSON.stringify(this.consumedMoves),
-            JSON.stringify(this.linesData),
-            JSON.stringify(this.squaresData),
-            JSON.stringify(this.squareAnalysis)
-        )
+        this.dataModel.setGameData(
+            this.consumedMoves,
+            this.linesData,
+            this.squaresData,
+            this.squaresAnalysis);
     },
 
-    receiveMove: function (consumedMoves, linesData, squaresData, squareAnalysis) {
-        this.consumedMoves = JSON.parse(consumedMoves);
-        this.linesData = JSON.parse(linesData);
-        this.squaresData = JSON.parse(squaresData);
-        this.squareAnalysis = JSON.parse(squareAnalysis);
+    receiveMove: function (consumedMoves, linesData, squaresData, squaresAnalysis) {
+        this.consumedMoves = consumedMoves;
+        this.linesData = linesData;
+        this.squaresData = squaresData;
+        this.squaresAnalysis = squaresAnalysis;
         this.updateAll();
     },
 

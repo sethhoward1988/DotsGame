@@ -1,11 +1,10 @@
 
-var Player = function (name, color, photoUrl, userId, sessionId, isMe) {
+var Player = function (name, color, photoUrl, userId, sessionId) {
 	this.name = name;
 	this.color = color;
 	this.photoUrl = photoUrl;
 	this.userId = userId;
 	this.sessionId = sessionId;
-	this.isMe = isMe;
 	this.isActive = false;
 	this.score = 0;
 	this.setup();
@@ -59,14 +58,6 @@ Player.prototype = {
 
 	setUserId: function (userId) {
 		this.userId = userId;
-	},
-
-	setIsMe: function (isMe) {
-		this.isMe = isMe;
-	},
-
-	getIsMe: function () {
-		return this.isMe;
 	},
 
 	getScore: function () {
