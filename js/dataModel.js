@@ -33,38 +33,31 @@ RealtimeDataModel.prototype = {
 
     initializeModel: function (model) {
         this.model = model;
-        var consumedMoves = model.createString('');
-        var linesData = model.createString('');
-        var squaresData = model.createString('');
-        var squareAnalysis = model.createString('');
-        var playersMap = model.createMap({});
-
-        var config = model.createMap({
-            "gameStarted":"false"
+        var collaborativePlayersMap = model.createMap({
+            activePlayerIndex: 0,
+            activePlayers: []
+        });
+        var collaborativeGameDataMap = model.createMap({
+            gridSize: 4,
+            consumedMoves: {},
+            linesData: {},
+            squaresData: {},
+            squaresAnalysis: {},
+            gameStarted: false,
         });
 
-        model.getRoot().set('consumedMoves', consumedMoves);
-        model.getRoot().set('linesData', linesData);
-        model.getRoot().set('squareData', squaresData);
-        model.getRoot().set('squareAnalysis', squareAnalysis);
-        model.getRoot().set('config', config);
+        model.getRoot().set('playersMap', collaborativePlayersMap);
+        model.getRoot().set('gameDataMap', collaborativeGameDataMap);
     },
 
     onFileLoaded: function (realtimeDoc) {
         this.realtimeDoc = realtimeDoc;
         this.model = this.realtimeDoc.getModel();
-        this.consumedMovesField = this.model.getRoot().get('consumedMoves');
-        this.linesDataField = this.model.getRoot().get('linesData');
-        this.squaresDataField = this.model.getRoot().get('squareData');
-        this.squareAnalysisField = this.model.getRoot().get('squareAnalysis');
-        this.configField = this.model.getRoot().get('config');
+        this.gameDataField = this.model.getRoot().get('gameDataMap');
+        this.playersField = this.model.getRoot().get('playersMap');
 
-        this.consumedMovesField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
-        this.linesDataField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
-        this.squaresDataField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
-        this.squareAnalysisField.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, this.onDataChange);
-
-        this.configField.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, this.onConfigChange);
+        this.gameDataField.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, this.onGameDataChange);
+        this.playersField.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, this.onPlayersMapChange);
 
         this.realtimeDoc.addEventListener(gapi.drive.realtime.EventType.COLLABORATOR_JOINED, this.onCollaboratorJoined);
         this.realtimeDoc.addEventListener(gapi.drive.realtime.EventType.COLLABORATOR_LEFT, this.onCollaboratorLeft);
@@ -87,12 +80,10 @@ RealtimeDataModel.prototype = {
     },
 
     onCollaboratorJoined: function (evt) {
-        console.log('Collaborator Joined');
         this.events.trigger('collaboratorJoined', evt.collaborator);
     },
 
     onCollaboratorLeft: function (evt) {
-        console.log('Collaborator left');
         this.events.trigger('collaboratorLeft', evt.collaborator);
     },
 
@@ -111,42 +102,60 @@ RealtimeDataModel.prototype = {
         this.initializeModel(this.model);
     },
 
-    onConfigChange: function (evt) {
-        if(evt.property == 'gridSize'){
-
-        } else if (evt.property == 'gameStarted') {
-            if(evt.newValue == 'true'){
-                this.events.trigger(
-                    'startGame',
-                    parseInt(this.configField.get('gridSize'))
-                )
-            } else if (evt.newValue == 'false'){
-                this.events.trigger('endGame')
-            }
-        } else if (evt.property == 'activePlayerIndex') {
+    onGameDataChange: function (evt) {
+        var event;
+        switch () {
+            case 'gridSize':
+                break;
+            case 'gameStarted':
+                event = 'startGame';
+                break;
+            case 'endGame':
+                event = 'endGame'
+        }
+        if(event){
             this.events.trigger(
-                'activePlayerIndexChange',
-                parseInt(evt.newValue)
-            );
-        } else if (evt.property.indexOf('player-') == 0) {
-            this.events.trigger(
-                'playerUpdate',
-                JSON.parse(evt.newValue)
+                'startGame',
+                parseInt(this.gameDataField.get('gridSize'))
             );
         }
         console.log(evt.property, evt.oldValue, evt.newValue);
     },
 
-    updatePlayerToDataModel: function (player) {
-        this.configField.set("player-" + player.userId, JSON.stringify(player));
+    onPlayersMapChange: function () {
+        if (evt.property == 'activePlayers') {
+            this.events.trigger(
+                'playerUpdate',
+                parseInt(evt.newValue)
+            );
+        }
     },
 
-    removePlayerFromDataModel: function (player) {
-        this.configField.delete("player-" + player.userId);
+    addPlayerToDataModel: function (player) {
+        var players = this.gameDataField.get('activePlayers');
+        var doesPlayerExist = false;
+        for (var i = players.length - 1; i >= 0; i--) {
+            if(players[i].userId == player.userId){
+                return;
+            }
+        };
+        players.push(player);
+        this.gameDataField.set('activePlayers', players);
     },
 
-    setActivePlayerIndex: function (index) {
-        this.configField.set('activePlayerIndex', index);
+    updatePlayersToDataModel: function (players) {
+        this.gameDataField.set('activePlayers', players);
+    },
+
+    removePlayerFromDataModel: function (userId) {
+        var players = this.gameDataField.get('activePlayers');
+        var removedPlayer;
+        for (var i = players.length - 1; i >= 0; i--) {
+            if(players[i].userId == player.userId){
+                players.splice(i, 1);
+            }
+        };
+        this.gameDataField.set('activePlayers', players);
     }
 
 }

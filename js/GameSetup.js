@@ -35,13 +35,10 @@ var GameController = function () {
 GameController.prototype = {
 
 	setup: function () {
-		this.onCollaboratorJoined = _.bind(this.onCollaboratorJoined, this);
 		this.onGameStarting = _.bind(this.onGameStarting, this);
+		this.onGameEnding = _.bind(this.onGameEnding, this);
 		this.onFileLoaded = _.bind(this.onFileLoaded, this);
-		this.onCollaboratorLeave = _.bind(this.onCollaboratorLeave, this);
 
-		this.events.subscribe(this.onCollaboratorJoined, 'collaboratorJoined');
-		this.events.subscribe(this.onCollaboratorLeave, 'collaboratorLeft');
 		this.events.subscribe(this.onGameStarting, 'startGame');
 		this.events.subscribe(this.onGameEnding, 'endGame');
 		this.events.subscribe(this.onFileLoaded, 'fileLoaded');
@@ -84,35 +81,6 @@ GameController.prototype = {
 		this.realtimeDataModel,
 		isResume);
 		this.gameStarted = true;
-	},
-
-	addPlayer: function (name, color, photoUrl, userId, sessionId, isMe) {
-		this.playerTurn.addPlayer(name, color, photoUrl, userId, sessionId, isMe)
-	},
-
-	clearPlayers: function () {
-		this.playerTurn.clearPlayers();
-	},
-
-	createPlayers: function () {
-		var collaborators = this.realtimeDataModel.realtimeDoc.getCollaborators();
-		for (var i = collaborators.length - 1; i >= 0; i--) {
-			this.onCollaboratorJoined(collaborators[i]);
-		};
-	},
-
-	onCollaboratorJoined: function (collaborator) {
-		this.addPlayer(
-			collaborator.displayName,
-			collaborator.color,
-			collaborator.photoUrl,
-			collaborator.userId,
-			collaborator.sessionId,
-			collaborator.isMe)
-	},
-
-	onCollaboratorLeave: function (collaborator) {
-		this.playerTurn.removePlayer(collaborator.userId);
 	}
 
 }

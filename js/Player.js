@@ -1,5 +1,5 @@
 
-var Player = function (name, color, photoUrl, userId, sessionId, isMe, events) {
+var Player = function (name, color, photoUrl, userId, sessionId, isMe) {
 	this.name = name;
 	this.color = color;
 	this.photoUrl = photoUrl;
@@ -8,7 +8,6 @@ var Player = function (name, color, photoUrl, userId, sessionId, isMe, events) {
 	this.isMe = isMe;
 	this.isActive = false;
 	this.score = 0;
-	this.events = events;
 	this.setup();
 }
 
@@ -80,7 +79,6 @@ Player.prototype = {
 
 	incrementScore: function (quantity) {
 		this.score += quantity;
-		this.events.trigger('scoreChange');
 	}
 
 }
