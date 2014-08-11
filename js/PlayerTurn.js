@@ -14,11 +14,13 @@ var PlayerTurn = function (el, events, dataModel, gameSetup) {
 PlayerTurn.prototype = {
 
 	playerHtml: _.template('' +
-				'<div class="player <%= active %>">' +
-					'<div class="name"><%= name %></div>' +
-					'<img src="https:<%= photoUrl %>" style="border: 5px solid <%= color %>" />' +
-					'<div class="score"><%= score %></div>' +
-				'</div>'),
+					'<li class="<%= active %>">' +
+						'<div class="photo"><img src="https:<%= photoUrl %>" style="border: 5px solid <%= color %>" /></div>' +
+						'<div class="data">' +
+							'<div class="name"><%= name %></div>' +
+							'<div class="score"><%= score %></div>' +
+						'</div>' +
+					'</li>'),
 
 	bind: function () {
 		this.updateUI = _.bind(this.updateUI, this);
@@ -53,9 +55,9 @@ PlayerTurn.prototype = {
 	},
 
 	updateUI: function () {
-		this.$el.empty();
+		this.$el.find('.players-list').empty();
 		for(var i = 0; i < this.players.length; i++){
-			this.$el.append(this.playerHtml({
+			this.$el.find('.players-list').append(this.playerHtml({
 				name: this.players[i].name,
 				color: this.players[i].color,
 				score: this.players[i].score,

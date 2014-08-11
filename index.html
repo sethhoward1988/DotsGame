@@ -15,9 +15,11 @@
     <link href="css/styles.css" rel="stylesheet" />
   </head>
   <body>
-    <button id="authorizeButton" disabled>You must authorize</button>
-    Grid Size: <input id="gridSize" type="number"></input><br />
-    <button id="start">Start Game</button>
-    <button id="end">End Game</button>
+    <div class="overlay hidden"></div>
+    <div class="lightbox hidden">
+      In order to play Dots built on Google Drive's Realtime API, you must authorize the app to access your Google account.
+      <hr>
+      <button id="authorizeButton" disabled>Authorize Dots</button>
+    </div>
   </body>
 </html>

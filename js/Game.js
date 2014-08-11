@@ -116,7 +116,10 @@ Game.prototype = {
             this.squaresAnalysis['square' + affectedSquares[i]]++;
             if(this.squaresAnalysis['square' + affectedSquares[i]] == 4){
                 var b = function (squareNumber) {
-                    that.squaresData.push(squareNumber);
+                    that.squaresData.push({
+                        number: squareNumber,
+                        color: that.playerTurn.activePlayer.color
+                    });
                     score++;
                 }(affectedSquares[i]);
             }
@@ -139,11 +142,11 @@ Game.prototype = {
         squares.enter().append('rect')
             .attr('class', 'square')
             .attr('x', function (d) {
-                var column = Math.floor(d % (that.totalSquares / (that.gridSize-1)))
+                var column = Math.floor(d.number % (that.totalSquares / (that.gridSize-1)))
                 return that.xScale(column);
             })
             .attr('y', function (d) {
-                var row = Math.floor(d / (that.totalSquares / (that.gridSize-1)))
+                var row = Math.floor(d.number / (that.totalSquares / (that.gridSize-1)))
                 return that.yScale(row)
             })
             .attr('width', function (d) {
@@ -152,7 +155,9 @@ Game.prototype = {
             .attr('height', function (d) {
                 return that.xScale(1) - that.xScale(0);  
             })
-            .attr('fill', this.playerTurn.activePlayer);
+            .attr('fill', function (d) {
+                return d.color;
+            });
     },
 
     buildUI: function () {
@@ -358,7 +363,7 @@ Game.prototype = {
             .attr('x2', function (d) { return d.x[1] })
             .attr('y2', function (d) { return d.y[1] })
             .attr('stroke-width', 5)
-            .attr('stroke', this.playerTurn.getMe().color);
+            .attr('stroke', this.playerTurn.activePlayer.color);
     },
 
     onDrag: function () {
@@ -387,7 +392,7 @@ Game.prototype = {
             var line = this.lineSelection[0][0];
             $(this.gLines[0][0]).append(line);
             this.linesData.push({
-                color: this.playerTurn.getMe().color,
+                color: this.playerTurn.activePlayer.color,
                 dFrom: _.clone(this.dActiveCircle),
                 dTo: _.clone(this.dLegalMove)
             });

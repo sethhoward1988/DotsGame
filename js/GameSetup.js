@@ -21,9 +21,14 @@ $(function(){
 
 var GameController = function () {
 	this.$el = $('<div id="game"></div>');
-	this.$playersPanel = $('<div class="players"></div>');
+	this.$leftPanel = $('<div class="leftPane"></div>');
+	this.$rightPanel = $('<div class="rightPane"></div>');
+	this.$playersPanel = $(this.playersPanelHtml);
 	this.$gameContainer = $('<div class="dots-container"></div>');
-	this.$el.append(this.$playersPanel).append(this.$gameContainer);
+	this.$rightPanel.append(this.$gameContainer);
+	this.$controlPanel = $(this.controlPanelHtml);
+	this.$leftPanel.append(this.$playersPanel).append(this.$controlPanel);
+	this.$el.append(this.$leftPanel).append(this.$rightPanel);
 	this.events = new Events();
 	this.realtimeDataModel = new RealtimeDataModel(this.events);
 	this.playerTurn = new PlayerTurn(this.$playersPanel, this.events, this.realtimeDataModel, this);
@@ -32,6 +37,17 @@ var GameController = function () {
 }
 
 GameController.prototype = {
+
+	playersPanelHtml: 	'<div class="players">' +
+							'<h1>Players</h1>' +
+							'<ul class="players-list"></ul>' +
+						'</div>',
+
+	controlPanelHtml: 	'<div class="controls">' +
+							'Grid Size:<input id="gridSize" type="number"></input>' +
+							'<button id="start">Start Game</button>' +
+							'<button id="end">End Game</button>' +
+						'</div>',
 
 	setup: function () {
 		this.onGameStarting = _.bind(this.onGameStarting, this);
@@ -59,9 +75,7 @@ GameController.prototype = {
 		if(oldValue == 'true' && newValue == 'true'){
 			isResume = true;
 		}
-		if(!this.game){
-			this.createGame(isResume);	
-		}
+		this.createGame(isResume);
 	},
 
 	onGameEnding: function () {
@@ -84,6 +98,7 @@ GameController.prototype = {
 	},
 
 	createGame: function (isResume) {
+		if(this.game){ return; }
 		var size = parseInt(this.realtimeDataModel.gameDataField.get('gridSize'));
 
 		this.game = new Game({

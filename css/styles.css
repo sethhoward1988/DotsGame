@@ -1,6 +1,16 @@
 
+#game {
+	width: 900px;
+	margin: 50px auto;
+}
+
 .game-container {
 	margin: 0 auto;
+}
+
+.dots-container {
+	display: inline-block;
+	margin-left: 25px;
 }
 
 circle.dot {
@@ -41,6 +51,130 @@ rect.square {
 	height: 20px;
 }
 
-.player.active {
-	background-color: red;
+.players, .controls {
+	width: 300px;
+	display: inline-block;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	padding: 20px;
+	text-align: center;
+	box-shadow: 1px 1px 5px 0px #CCC;
+	margin-bottom: 25px;
+}
+
+.players ul {
+	padding: 0;
+}
+
+.players ul div {
+	height: 70px;
+	line-height: 70px;
+	vertical-align: top;
+}
+
+.players ul li {
+	list-style-type: none;
+	position: relative;
+	height: 70px;
+	width: 300px;
+}
+
+.players ul li .photo {
+	position: absolute;
+	left: 5px;
+	top: 5px;
+}
+
+.players ul li .data {
+	position: absolute;
+	left:70px;
+	top: 0px;
+}
+
+.players ul li .data .name {
+	width: 175px;
+}
+
+.players ul li .data .score {
+	width: 50px;
+}
+
+.players ul li .data div {
+	display: inline-block;
+}
+
+.players-list li.active {
+	transition: all 1s;
+	font-weight: bolder;
+	background-color: #eee;
+	border-radius: 5px;
+	border: 2px solid #ccc;
+	box-shadow: 1px 1px 5px 0px #CCC;
+}
+
+.players h1 {
+	font-size: 32px;
+	margin-top: 0;
+}
+
+.players .score {
+	font-size: 28px;
+}
+
+body {
+	font-family: 'Open Sans', sans-serif;
+}
+
+.leftPane, .rightPane {
+	display: inline-block;
+	vertical-align: top;
+}
+
+.leftPane {
+	width: 341px;
+	padding: 0px 10px;
+}
+
+.rightPane {
+	width: 500px;
+	padding: 0px 10px;
+}
+
+
+
+
+
+/* LIGHTBOX CSS */
+
+.overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	background: -moz-radial-gradient(center, ellipse cover,  rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%); /* FF3.6+ */
+	background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,rgba(0,0,0,0.65)), color-stop(100%,rgba(0,0,0,0))); /* Chrome,Safari4+ */
+	background: -webkit-radial-gradient(center, ellipse cover,  rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-radial-gradient(center, ellipse cover,  rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%); /* Opera 12+ */
+	background: -ms-radial-gradient(center, ellipse cover,  rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%); /* IE10+ */
+	background: radial-gradient(ellipse at center,  rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6000000', endColorstr='#00000000',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+	width: 100%;
+	height: 100%;
+	z-index: 99;
+}
+
+.lightbox {
+	width: 400px;
+	padding: 30px;
+	background-color: white;
+	border-radius: 5px;
+	border: 2px solid #ccc;
+	box-shadow: 2px 2px 2px 2px black;
+	position: absolute;
+	left: calc(50% - 215px);
+	top: 200px;
+	z-index: 100
+}
+
+.hidden {
+	display: none;
 }

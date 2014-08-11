@@ -13,14 +13,14 @@
 		<script src="js/dataModel.js"></script>
 		<script src="js/realtime-client-utils.js"></script>
 		<link href="css/styles.css" rel="stylesheet" />
+		<link href='http://fonts.googleapis.com/css?family=Open+Sans:300,800' rel='stylesheet' type='text/css'>
 	</head>
 	<body>
-		<button id="authorizeButton" disabled>You must authorize</button>
-		Grid Size: <input id="gridSize" type="number"></input><br />
-		Player Name<input id="playerInput" type="text"></input><br />
-		Player Color<input id="color" type="color">
-		<button id="add">Add Player</button>
-		<button id="start">Start Game</button>
+		<div class="overlay"></div>
+		<div class="lightbox">
+			In order to play Dots built on Google Drive's Realtime API, you must authorize the app to access your Google account.
+			<button id="authorizeButton" disabled>
+		</div>
 		<div id="game"></div>
 	</body>
 </html>
