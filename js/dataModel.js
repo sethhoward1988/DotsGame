@@ -26,7 +26,7 @@ RealtimeDataModel.prototype = {
         this.startRealtime = _.bind(this.startRealtime, this);
         this.onCollaboratorJoined = _.bind(this.onCollaboratorJoined, this);
         this.onCollaboratorLeft = _.bind(this.onCollaboratorLeft, this);
-        this.onGameDataChange = _.debounce(this.onGameDataChange, 250);
+        // this.onGameDataChange = _.debounce(this.onGameDataChange, 250);
         this.onGameDataChange = _.bind(this.onGameDataChange, this);
         this.onPlayersMapChange = _.bind(this.onPlayersMapChange, this);
 
@@ -110,7 +110,24 @@ RealtimeDataModel.prototype = {
     },
 
     reset: function () {
-        this.initializeModel(this.model);
+        this.model.beginCompoundOperation('move');
+            this.playersField.set('playerData', {
+                activePlayerIndex: 0,
+                activePlayers: []
+            });
+            this.gameDataField.set('gridSize', 4);
+            this.gameDataField.set('consumedMoves', '');
+            this.gameDataField.set('linesData', []);
+            this.gameDataField.set('squaresData', []);
+            this.gameDataField.set('squaresAnalysis', {});
+            this.gameDataField.set('gameStarted', false);
+        this.model.endCompoundOperation();
+        var collaborators = this.realtimeDoc.getCollaborators();
+        for (var i = collaborators.length - 1; i >= 0; i--) {
+            this.onCollaboratorJoined({
+                collaborator: collaborators[i]
+            });
+        };
     },
 
     onGameDataChange: function (evt) {

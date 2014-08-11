@@ -16,7 +16,7 @@ PlayerTurn.prototype = {
 	playerHtml: _.template('' +
 				'<div class="player <%= active %>">' +
 					'<div class="name"><%= name %></div>' +
-					'<div class="color" style="background-color:<%= color %>"></div>' +
+					'<img src="https:<%= photoUrl %>" style="border: 5px solid <%= color %>" />' +
 					'<div class="score"><%= score %></div>' +
 				'</div>'),
 
@@ -59,6 +59,7 @@ PlayerTurn.prototype = {
 				name: this.players[i].name,
 				color: this.players[i].color,
 				score: this.players[i].score,
+				photoUrl: this.players[i].photoUrl,
 				active: this.players[i].isActive ? 'active' : ''
 			}));
 		}
@@ -97,7 +98,7 @@ PlayerTurn.prototype = {
 	},
 
 	incrementScore: function (score) {
-		this.activePlayer.incrementScore(score);
+		this.activePlayer.score += score;
 		this.sendPlayerData();
 	},
 
@@ -116,8 +117,7 @@ PlayerTurn.prototype = {
 	},
 
 	reset: function () {
-		// for (var i = this.players.length - 1; i >= 0; i--) {
-		// 	this.players[i].setScore(0);
-		// };
+		this.activePlayer = null;
+		this.activePlayerIndex = null;
 	}
 }

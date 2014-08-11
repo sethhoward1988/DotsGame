@@ -65,10 +65,13 @@ GameController.prototype = {
 	},
 
 	onGameEnding: function () {
-		// this.game.destroy();
+		this.gameStarted = false;
 		this.playerTurn.reset();
 		this.realtimeDataModel.reset();
-		this.game.el.remove();
+		if(this.game){
+			this.game.el.remove();	
+			this.game = null;
+		}
 	},
 
 	onFileLoaded: function () {
