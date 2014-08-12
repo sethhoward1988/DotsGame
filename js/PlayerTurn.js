@@ -15,7 +15,7 @@ PlayerTurn.prototype = {
 
 	playerHtml: _.template('' +
 					'<li class="<%= active %>">' +
-						'<div class="photo"><img src="https:<%= photoUrl %>" style="border: 5px solid <%= color %>" /></div>' +
+						'<div class="photo"><img src="https://<%= photoUrl %>" style="border: 5px solid <%= color %>" /></div>' +
 						'<div class="data">' +
 							'<div class="name"><%= name %></div>' +
 							'<div class="score"><%= score %></div>' +
@@ -61,7 +61,7 @@ PlayerTurn.prototype = {
 				name: this.players[i].name,
 				color: this.players[i].color,
 				score: this.players[i].score,
-				photoUrl: this.players[i].photoUrl,
+				photoUrl: this.players[i].photoUrl.replace('https://',''),
 				active: this.players[i].isActive ? 'active' : ''
 			}));
 		}

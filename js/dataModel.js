@@ -65,7 +65,7 @@ RealtimeDataModel.prototype = {
         this.realtimeDoc.addEventListener(gapi.drive.realtime.EventType.COLLABORATOR_JOINED, this.onCollaboratorJoined);
         this.realtimeDoc.addEventListener(gapi.drive.realtime.EventType.COLLABORATOR_LEFT, this.onCollaboratorLeft);
 
-        this.createPlayers();
+        this.addMe();
         this.events.trigger('fileLoaded');
     },
 
@@ -83,26 +83,27 @@ RealtimeDataModel.prototype = {
         this.realtimeLoader.start();
     },
 
-    createPlayers: function () {
+    addMe: function () {
+        var activePlayers = this.playersField.get('activePlayers');
         var collaborators = this.realtimeDoc.getCollaborators();
-        var players = [];
         
         for (var i = collaborators.length - 1; i >= 0; i--) {
-            players.push(new Player(
-                collaborators[i].displayName,
-                collaborators[i].color,
-                collaborators[i].photoUrl,
-                collaborators[i].userId,
-                collaborators[i].sessionId,
-                collaborators[i].isMe
-                ));
+            if(collaborators[i].isMe){
+                var duplicate = _.find(activePlayers, function (activePlayer){
+                    return activePlayer.userId == collaborators[i].userId;
+                })
+                if(!duplicate){
+                    activePlayers.push(collaborators[i]);    
+                }
+                i = -1;
+            }
         };
 
-        this.playersField.set('activePlayers', players);
+        this.playersField.set('activePlayers', activePlayers);
     },
 
     onCollaboratorJoined: function (evt) {
-        this.events.trigger('collaboratorJoined', evt.collaborator);
+        // this.events.trigger('collaboratorJoined', evt.collaborator);
     },
 
     onCollaboratorLeft: function (evt) {
