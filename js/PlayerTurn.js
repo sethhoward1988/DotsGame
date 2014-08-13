@@ -6,16 +6,16 @@ var PlayerTurn = function (el, events, dataModel, gameSetup) {
 	this.dataModel = dataModel;
 	this.gameSetup = gameSetup;
 	this.bind();
-	this.events.subscribe(this.onCollaboratorJoined, 'collaboratorJoined');
 	this.events.subscribe(this.onCollaboratorLeave, 'collaboratorLeft');
 	this.events.subscribe(this.onPlayersUpdate, 'playersUpdate');
 	this.events.subscribe(this.onUpdateUI, 'updatePlayersUI');
+	this.events.subscribe(this.onGameOver, 'gameOver');
 }
 
 PlayerTurn.prototype = {
 
 	playerHtml: _.template('' +
-					'<li class="<%= active %>">' +
+					'<li class="<%= active %> <%= winner %>" data-id="<%= id %>">' +
 						'<div class="photo"><img src="https://<%= photoUrl %>" style="border: 5px solid <%= color %>" /></div>' +
 						'<div class="data">' +
 							'<div class="name"><%= name %></div>' +
@@ -26,9 +26,9 @@ PlayerTurn.prototype = {
 	bind: function () {
 		this.updateUI = _.bind(this.updateUI, this);
 		this.onCollaboratorLeave = _.bind(this.onCollaboratorLeave, this);
-		this.onCollaboratorJoined = _.bind(this.onCollaboratorJoined, this);
 		this.onPlayersUpdate = _.bind(this.onPlayersUpdate, this);
 		this.onUpdateUI = _.bind(this.onUpdateUI, this);
+		this.onGameOver = _.bind(this.onGameOver, this);
 	},
 
 	startPlaying: function () {
@@ -57,35 +57,53 @@ PlayerTurn.prototype = {
 	},
 
 	updateUI: function () {
-		this.$el.find('.players-list').empty();
+
+		// this.$el.find('.players-list').empty();
 		for(var i = 0; i < this.players.length; i++){
-			this.$el.find('.players-list').append(this.playerHtml({
-				name: this.players[i].displayName,
-				color: this.players[i].color,
-				score: this.players[i].score,
-				photoUrl: this.players[i].photoUrl.replace('https://',''),
-				active: this.players[i].isActive ? 'active' : ''
-			}));
+			var el = $('*[data-id="' + this.players[i].name + '"]');
+			if(!el.length){
+				this.$el.find('.players-list').append(this.playerHtml({
+					name: this.players[i].name,
+					color: this.players[i].color,
+					score: this.players[i].score,
+					photoUrl: this.players[i].photoUrl.replace('https://',''),
+					active: this.players[i].isActive ? 'active' : '',
+					userId: this.players[i].userId,
+					winner: this.players[i].winner ? 'winner' : '',
+					id: this.players[i].name,
+				}));	
+			} else {
+				el.removeClass('active').removeClass('winner');
+				el.addClass(this.players[i].winner ? 'winner' : '');
+				el.addClass(this.players[i].isActive ? 'active' : '');
+				el.find('.score').text(this.players[i].score);
+				el.find('img').css('border','5px solid ' + this.players[i].color);
+			}
 		}
+	},
+
+	onGameOver: function () {
+		var highScore = 0;
+		for (var i = this.players.length - 1; i >= 0; i--) {
+			if(this.players[i].score > highScore){
+				highScore = this.players[i].score;
+			}
+		};
+		for (var i = this.players.length - 1; i >= 0; i--) {
+			if(this.players[i].score == highScore){
+				this.players[i].winner = true;
+			}
+		};
+		this.updateUI();
 	},
 
 	onUpdateUI: function () {
 		this.players = this.dataModel.playersField.get('playerData').activePlayers;
 		this.updateUI();
 	},
-
-	onCollaboratorJoined: function (collaborator) {
-		this.dataModel.addPlayerToDataModel(new Player(
-			collaborator.displayName,
-			collaborator.color,
-			collaborator.photoUrl,
-			collaborator.userId,
-			collaborator.sessionId,
-			this.events));
-	},
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
 	onCollaboratorLeave: function (collaborator) {
-		this.dataModel.removePlayerFromDataModel(collaborator.userId);
+		this.dataModel.removePlayerFromDataModel(collaborator.photoUrl);
 	},
 
 	onPlayersUpdate: function () {
@@ -96,8 +114,9 @@ PlayerTurn.prototype = {
 			this.activePlayer = this.players[this.activePlayerIndex];
 			this.activePlayer.isActive = true;
 			for (var i = this.players.length - 1; i >= 0; i--) {
-				if(this.players[i].isActive){
-					if(this.isMe(this.players[i].userId)){
+				if(this.isMe(this.players[i].userId)){
+					this.me = this.players[i];
+					if(this.players[i].isActive){
 						this.events.trigger('myTurn');	
 					}
 				}
@@ -117,12 +136,16 @@ PlayerTurn.prototype = {
 	},
 
 	getMe: function () {
-		var collaborators = this.dataModel.realtimeDoc.getCollaborators();
+		var collaborators = this.dataModel.getCollaborators();
 		for (var i = collaborators.length - 1; i >= 0; i--) {
 			if(collaborators[i].isMe){
 				return collaborators[i];
 			}
 		};
+	},
+
+	getOrAssignColor: function (userId) {
+
 	},
 
 	reset: function () {

@@ -20,11 +20,11 @@ $(function(){
 
 
 var GameController = function () {
-	this.$el = $('<div id="game"></div>');
-	this.$leftPanel = $('<div class="leftPane"></div>');
-	this.$rightPanel = $('<div class="rightPane"></div>');
+	this.$el = $(this.gameEl);
+	this.$leftPanel = $(this.leftPanel);
+	this.$rightPanel = $(this.rightPanel);
 	this.$playersPanel = $(this.playersPanelHtml);
-	this.$gameContainer = $('<div class="dots-container"></div>');
+	this.$gameContainer = $(this.gameContainer);
 	this.$rightPanel.append(this.$gameContainer);
 	this.$controlPanel = $(this.controlPanelHtml);
 	this.$leftPanel.append(this.$playersPanel).append(this.$controlPanel);
@@ -32,11 +32,21 @@ var GameController = function () {
 	this.events = new Events();
 	this.realtimeDataModel = new RealtimeDataModel(this.events);
 	this.playerTurn = new PlayerTurn(this.$playersPanel, this.events, this.realtimeDataModel, this);
+	this.chat = new Chat(this.realtimeDataModel, this.events);
+	this.$leftPanel.append(this.chat.$el);
 	this.realtimeDataModel.startRealtime();
 	this.setup();
 }
 
 GameController.prototype = {
+
+	gameEl: '<div id="game"></div>',
+
+	gameContainer: '<div class="dots-container"></div>',
+
+	leftPanel: '<div class="leftPane"></div>',
+
+	rightPanel: '<div class="rightPane"></div>',
 
 	playersPanelHtml: 	'<div class="players">' +
 							'<h1>Players</h1>' +
@@ -44,22 +54,20 @@ GameController.prototype = {
 						'</div>',
 
 	controlPanelHtml: 	'<div class="controls">' +
-							'Grid Size:<input id="gridSize" type="number"></input>' +
-							'<button id="start">Start Game</button>' +
-							'<button id="end">End Game</button>' +
+							'<h1>Controls</h1>' +
+							'Grid Size:<input id="gridSize" type="number" value="4"></input><br />' +
+							'<button id="start" class="pure-button">Start Game</button>' +
+							'<button id="end" class="pure-button">End Game</button>' +
 						'</div>',
 
 	setup: function () {
 		this.onGameStarting = _.bind(this.onGameStarting, this);
 		this.onGameEnding = _.bind(this.onGameEnding, this);
 		this.onFileLoaded = _.bind(this.onFileLoaded, this);
-		this.onBeforeUnload = _.bind(this.onBeforeUnload, this);
 
 		this.events.subscribe(this.onGameStarting, 'startGame');
 		this.events.subscribe(this.onGameEnding, 'endGame');
 		this.events.subscribe(this.onFileLoaded, 'fileLoaded');
-
-		window.addEventListener('beforeunload', this.onBeforeUnload);
 	},
 
 	start: function () {
@@ -71,10 +79,6 @@ GameController.prototype = {
 
 	end: function () {
 		this.realtimeDataModel.gameDataField.set('gameStarted', 'false');
-	},
-
-	onBeforeUnload: function (evt) {
-		this.realtimeDataModel.onBeforeUnload();
 	},
 
 	onGameStarting: function (newValue, oldValue) {

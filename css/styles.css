@@ -4,6 +4,24 @@
 	margin: 50px auto;
 }
 
+#game h1 {
+	font-size: 24px;
+	border-bottom: 1px solid #ccc;
+	margin-top: 0;
+	margin-bottom: 20px;
+	padding-bottom: 10px;
+
+}
+
+input {
+	border-radius: 3px;
+	border: 1px solid #ccc;
+	line-height: 30px;
+	height: 40px;
+	display: inline-block;
+	padding-left: 15px;
+}
+
 .game-container {
 	margin: 0 auto;
 }
@@ -51,7 +69,7 @@ rect.square {
 	height: 20px;
 }
 
-.players, .controls {
+.players, .controls, .chat-container {
 	width: 300px;
 	display: inline-block;
 	border: 1px solid #ccc;
@@ -73,6 +91,7 @@ rect.square {
 }
 
 .players ul li {
+	transition: all 1s;
 	list-style-type: none;
 	position: relative;
 	height: 70px;
@@ -109,7 +128,7 @@ rect.square {
 }
 
 .players-list li.active {
-	transition: all 1s;
+	transition: all .5s;
 	font-weight: bolder;
 	background-color: #eee;
 	border-radius: 5px;
@@ -117,9 +136,10 @@ rect.square {
 	box-shadow: 1px 1px 5px 0px #CCC;
 }
 
-.players h1 {
-	font-size: 32px;
-	margin-top: 0;
+.players-list li.winner {
+	transition: all 5s;
+	color: white;
+	background-color: #E5C100;
 }
 
 .players .score {
@@ -182,4 +202,49 @@ body {
 
 .hidden {
 	display: none;
+}
+
+/* CONTROLS */
+
+#gridSize {
+	width: 75px;
+	margin: 0px 10px;
+}
+
+.controls button {
+	margin: 10px;
+}
+
+
+/* CHAT */
+
+.chatBox {
+	height: 300px;
+	font-size: 12px;
+}
+
+.chat-container input {
+	width: calc(100% - 80px);
+	display: inline-block;
+	color: steelblue;
+}
+
+.chat-container button {
+	margin-left: 10px;
+	display: inline-block;
+}
+
+
+.chatBox div {
+	padding: 2px 0px;
+	text-align: left;
+}
+
+.local-message {
+	color: steelblue;
+}
+
+.remote-message {
+	color: darkgreen;
+	padding-left: 35px;
 }

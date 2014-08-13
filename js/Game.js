@@ -189,7 +189,7 @@ Game.prototype = {
 
     setScales: function () {
         this.xScale = d3.scale.linear()
-            .range([0, this.width])
+            .range([0, this.width]);
 
         this.yScale = d3.scale.linear()
             .range([0, this.height]);
@@ -211,6 +211,9 @@ Game.prototype = {
     updateAll: function () {
         this.updateSquares();
         this.updateLines();
+        if(this.gameOver){
+            this.endGame();
+        }
     },
 
     createDots: function () {
@@ -337,11 +340,18 @@ Game.prototype = {
             .style('opacity', 1)
     },
 
+    endGame: function () {
+        this.events.trigger('gameOver');
+    },
+
     // EVENTS
 
     onDragStart: function (dCircle) {
         var that = this;
         if(!that.myTurn){
+            return;
+        }
+        if(that.gameOver){
             return;
         }
         this.mouseDown = true;
@@ -478,6 +488,12 @@ Game.prototype = {
         this.linesData = linesData;
         this.squaresData = squaresData;
         this.squaresAnalysis = squaresAnalysis;
+        this.gameOver = true;
+        for(prop in squaresAnalysis){
+            if(squaresAnalysis[prop] != 4){
+                this.gameOver = false;
+            }
+        }
         this.updateAll();
     },
 
