@@ -9,6 +9,7 @@ var PlayerTurn = function (el, events, dataModel, gameSetup) {
 	this.events.subscribe(this.onCollaboratorJoined, 'collaboratorJoined');
 	this.events.subscribe(this.onCollaboratorLeave, 'collaboratorLeft');
 	this.events.subscribe(this.onPlayersUpdate, 'playersUpdate');
+	this.events.subscribe(this.onUpdateUI, 'updatePlayersUI');
 }
 
 PlayerTurn.prototype = {
@@ -27,6 +28,7 @@ PlayerTurn.prototype = {
 		this.onCollaboratorLeave = _.bind(this.onCollaboratorLeave, this);
 		this.onCollaboratorJoined = _.bind(this.onCollaboratorJoined, this);
 		this.onPlayersUpdate = _.bind(this.onPlayersUpdate, this);
+		this.onUpdateUI = _.bind(this.onUpdateUI, this);
 	},
 
 	startPlaying: function () {
@@ -58,13 +60,18 @@ PlayerTurn.prototype = {
 		this.$el.find('.players-list').empty();
 		for(var i = 0; i < this.players.length; i++){
 			this.$el.find('.players-list').append(this.playerHtml({
-				name: this.players[i].name,
+				name: this.players[i].displayName,
 				color: this.players[i].color,
 				score: this.players[i].score,
 				photoUrl: this.players[i].photoUrl.replace('https://',''),
 				active: this.players[i].isActive ? 'active' : ''
 			}));
 		}
+	},
+
+	onUpdateUI: function () {
+		this.players = this.dataModel.playersField.get('playerData').activePlayers;
+		this.updateUI();
 	},
 
 	onCollaboratorJoined: function (collaborator) {
@@ -76,7 +83,7 @@ PlayerTurn.prototype = {
 			collaborator.sessionId,
 			this.events));
 	},
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 	onCollaboratorLeave: function (collaborator) {
 		this.dataModel.removePlayerFromDataModel(collaborator.userId);
 	},
@@ -88,14 +95,14 @@ PlayerTurn.prototype = {
 			this.activePlayerIndex = playerData.activePlayerIndex;
 			this.activePlayer = this.players[this.activePlayerIndex];
 			this.activePlayer.isActive = true;
-		}
-		for (var i = this.players.length - 1; i >= 0; i--) {
-			if(this.players[i].isActive){
-				if(this.isMe(this.players[i].userId)){
-					this.events.trigger('myTurn');	
+			for (var i = this.players.length - 1; i >= 0; i--) {
+				if(this.players[i].isActive){
+					if(this.isMe(this.players[i].userId)){
+						this.events.trigger('myTurn');	
+					}
 				}
-			}
-		};
+			};
+		}
 		this.updateUI();
 	},
 

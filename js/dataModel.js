@@ -84,22 +84,33 @@ RealtimeDataModel.prototype = {
     },
 
     addMe: function () {
-        var activePlayers = this.playersField.get('activePlayers');
+        if(this.gameDataField.get('gameStarted') == 'true'){
+            // Game started, can't add anymore
+            return;
+        }
+        var playerData = this.playersField.get('playerData');
         var collaborators = this.realtimeDoc.getCollaborators();
         
         for (var i = collaborators.length - 1; i >= 0; i--) {
             if(collaborators[i].isMe){
-                var duplicate = _.find(activePlayers, function (activePlayer){
+                var duplicate = _.find(playerData.activePlayers, function (activePlayer){
                     return activePlayer.userId == collaborators[i].userId;
-                })
+                });
                 if(!duplicate){
-                    activePlayers.push(collaborators[i]);    
+                    collaborators[i].score = 0;
+                    collaborators[i].isActive = false;
+                    playerData.activePlayers.push(collaborators[i]);
+                    this.playersField.set('playerData', playerData);
+                } else {
+                    this.events.trigger('updatePlayersUI');
                 }
                 i = -1;
             }
         };
+    },
 
-        this.playersField.set('activePlayers', activePlayers);
+    onBeforeUnload: function () {
+        this.removeMe();
     },
 
     onCollaboratorJoined: function (evt) {

@@ -53,10 +53,13 @@ GameController.prototype = {
 		this.onGameStarting = _.bind(this.onGameStarting, this);
 		this.onGameEnding = _.bind(this.onGameEnding, this);
 		this.onFileLoaded = _.bind(this.onFileLoaded, this);
+		this.onBeforeUnload = _.bind(this.onBeforeUnload, this);
 
 		this.events.subscribe(this.onGameStarting, 'startGame');
 		this.events.subscribe(this.onGameEnding, 'endGame');
 		this.events.subscribe(this.onFileLoaded, 'fileLoaded');
+
+		window.addEventListener('beforeunload', this.onBeforeUnload);
 	},
 
 	start: function () {
@@ -68,6 +71,10 @@ GameController.prototype = {
 
 	end: function () {
 		this.realtimeDataModel.gameDataField.set('gameStarted', 'false');
+	},
+
+	onBeforeUnload: function (evt) {
+		this.realtimeDataModel.onBeforeUnload();
 	},
 
 	onGameStarting: function (newValue, oldValue) {
